@@ -1,9 +1,9 @@
 import { createSelector } from "@reduxjs/toolkit";
-import { filterMatchesByDate, matchesToCommanderHelper, matchesToPlayersHelper } from "../logic/dictionaryUtils";
-import { Commander } from "../types/domain/Commander";
-import { Match } from "../types/domain/Match";
-import { Player } from "../types/domain/Player";
-import { AppState } from "./rootReducer";
+import { filterMatchesByDate, matchesToCommanderHelper, matchesToPlayersHelper } from "../../logic/dictionaryUtils";
+import { Commander } from "../../types/domain/Commander";
+import { Match } from "../../types/domain/Match";
+import { Player } from "../../types/domain/Player";
+import { AppState } from "../rootReducer";
 
 export const getMatches = (state: AppState) => state.stats.matches;
 
@@ -20,7 +20,7 @@ export const getMatch = createSelector(
     (matches: Match[] | undefined, matchId: string) => {
         const id = Number(matchId);
         return !Number.isNaN(id) && matches !== undefined ? matches[id] : undefined;
-    },
+    }
 );
 
 /**
@@ -31,7 +31,7 @@ export const getCommander = createSelector(
     (_state: AppState, id: string) => id,
     (commanders: { [id: string]: Commander } | undefined, id: string) => {
         return commanders ? commanders[id] : undefined;
-    },
+    }
 );
 
 /**
@@ -41,8 +41,9 @@ export const getPlayer = createSelector(
     getPlayers,
     (_state: AppState, id: string) => id,
     (players: { [id: string]: Player } | undefined, id: string) => {
-        return players ? players[id] : undefined;
-    },
+        const temp = players ? players[id] : undefined;
+        return temp;
+    }
 );
 
 /**
@@ -81,7 +82,7 @@ export const getMatchesByCommanderName = createSelector(
         }
 
         return result;
-    },
+    }
 );
 
 /**
@@ -109,7 +110,7 @@ export const getMatchesByPlayerName = createSelector(
         }
 
         return result;
-    },
+    }
 );
 
 export const getCommandersByDate = createSelector(
@@ -119,14 +120,14 @@ export const getCommandersByDate = createSelector(
     (
         matches: Match[] | undefined,
         commanders: { [id: string]: Commander } | undefined,
-        startDate?: Date,
+        startDate?: Date
     ): Commander[] => {
         if (matches === undefined || commanders === undefined) {
             return [];
         }
 
         return Object.values(matchesToCommanderHelper(matches, undefined, startDate));
-    },
+    }
 );
 
 /**
@@ -141,14 +142,14 @@ export const getCommandersByPlayerName = createSelector(
         matches: Match[] | undefined,
         commanders: { [id: string]: Commander } | undefined,
         playerName: string,
-        startDate?: Date,
+        startDate?: Date
     ): Commander[] => {
         if (matches === undefined || commanders === undefined) {
             return [];
         }
 
         return Object.values(matchesToCommanderHelper(matches, playerName, startDate));
-    },
+    }
 );
 
 export const getFavoriteCommanderForPlayer = createSelector(getCommandersByPlayerName, (commanders: Commander[]) => {
@@ -167,7 +168,7 @@ export const getPlayersByDate = createSelector(
         }
 
         return Object.values(matchesToPlayersHelper(matches, undefined, startDate));
-    },
+    }
 );
 
 /**
@@ -182,12 +183,12 @@ export const getPlayersByCommanderName = createSelector(
         matches: Match[] | undefined,
         commanders: { [id: string]: Commander } | undefined,
         commanderName: string,
-        startDate?: Date,
+        startDate?: Date
     ): Player[] => {
         if (matches === undefined || commanders === undefined) {
             return [];
         }
 
         return Object.values(matchesToPlayersHelper(matches, commanderName, startDate));
-    },
+    }
 );

@@ -1,16 +1,16 @@
 import { Outlet } from "react-router-dom";
 
 import "./Root.css";
-import SidebarWithHeader from "../components/SidebarWithHeader";
-import { useMatchHistory } from "../services/matchHistoryService";
+import AppFrame from "../components/navigation/AppFrame";
+import { MatchHistoryService } from "../services/MatchHistoryService";
 
 export default function Root() {
     // kick off the initial data hydration
-    useMatchHistory();
+    MatchHistoryService.useMatchHistory();
 
     return (
-        <SidebarWithHeader>
+        <AppFrame>
             <Outlet />
-        </SidebarWithHeader>
+        </AppFrame>
     );
 }

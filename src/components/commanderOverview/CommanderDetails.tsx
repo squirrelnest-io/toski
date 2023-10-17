@@ -5,20 +5,20 @@ import { useLoaderData, useNavigate } from "react-router-dom";
 import { Flex, Heading, Image, Input, Tab, TabList, TabPanel, TabPanels, Tabs, Text, Thead } from "@chakra-ui/react";
 
 import { AppState } from "../../redux/rootReducer";
-import { getCommander, getMatchesByCommanderName, getPlayersByCommanderName } from "../../redux/statsSelectors";
+import { getCommander, getMatchesByCommanderName, getPlayersByCommanderName } from "../../redux/stats/statsSelectors";
 import { Loading } from "../Loading";
 import { commanderList } from "../../services/commanderList";
 import { SortableTable } from "../dataVisualizations/SortableTable";
-import { matchHistoryColumns } from "../matchHistory/matchHistoryColumnHelper";
+import { matchHistoryColumns } from "../dataVisualizations/columnHelpers/matchHistoryColumnHelper";
 import { Match } from "../../types/domain/Match";
 import { MatchPlayer } from "../../types/domain/MatchPlayer";
 import { LineGraph } from "../dataVisualizations/LineGraph";
 import { Player } from "../../types/domain/Player";
-import { playerOverviewColumns } from "../playerOverview/playerOverviewColumnHelper";
 import { COMMANDER_MINIMUM_GAMES_REQUIRED } from "../constants";
 import { DatePicker } from "../common/DatePicker";
 import { MatchPlacementBarChart } from "./MatchPlacementBarChart";
 import { primaryColor } from "../../themes/acorn";
+import { topPlayersColumns } from "../dataVisualizations/columnHelpers/topPlayersColumnHelper";
 
 export async function loader(data: { params: any }) {
     return data.params.commanderId;
@@ -211,7 +211,7 @@ export const CommanderDetails = React.memo(function CommanderDetails() {
                         <Text>Top Players</Text>
                     </Tab>
                     <Tab>
-                        <Text>Match Placement</Text>
+                        <Text>Match Trends</Text>
                     </Tab>
                 </TabList>
                 <TabPanels>
@@ -253,7 +253,7 @@ export const CommanderDetails = React.memo(function CommanderDetails() {
                     <TabPanel>
                         {commanderPlayers.length ? (
                             <SortableTable
-                                columns={playerOverviewColumns}
+                                columns={topPlayersColumns}
                                 data={commanderPlayers}
                                 getRowProps={(row: any) => {
                                     return {

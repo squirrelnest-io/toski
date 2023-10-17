@@ -3,7 +3,7 @@ import { useDispatch } from "react-redux";
 
 import { Match } from "../types/domain/Match";
 import { sheetRowToMatch } from "../types/service/dataMappers";
-import { StatsAction } from "../redux/statsActions";
+import { StatsAction } from "../redux/stats/statsActions";
 import { useEffect } from "react";
 
 const matchHistoryDataEndpoint =
@@ -13,7 +13,7 @@ const matchHistoryDataEndpoint =
 const matchHistorySubmitEndpoint =
     "https://docs.google.com/forms/d/e/1FAIpQLScguPsS2TOxaABYLtbCDZ5zPXec2av9AI2kPI2JFwYqmghBYQ/formResponse";
 
-export const useMatchHistory = () => {
+const useMatchHistory = () => {
     // Do the initial data hydration here
     const dispatch = useDispatch();
 
@@ -36,7 +36,7 @@ export const useMatchHistory = () => {
     }, []);
 };
 
-export function mapObjectoMatches(resultObj: any): Match[] | undefined {
+function mapObjectoMatches(resultObj: any): Match[] | undefined {
     const matches: Match[] = [];
 
     if (resultObj.table === undefined || resultObj.table.rows === undefined) {
@@ -60,14 +60,14 @@ export type MatchSubmissionPlayer = {
     rank: number;
 };
 
-export const submitMatch = async (
+const submitMatch = async (
     date: Date,
     player1?: MatchSubmissionPlayer,
     player2?: MatchSubmissionPlayer,
     player3?: MatchSubmissionPlayer,
     player4?: MatchSubmissionPlayer,
     turnCount?: number,
-    extraNotes?: string,
+    extraNotes?: string
 ) => {
     var body: { [fieldName: string]: string } = {};
     body["entry.1178471159"] = date.toISOString().split("T")[0];
@@ -114,7 +114,7 @@ export const submitMatch = async (
         await axios
             .post(matchHistorySubmitEndpoint, body, {
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                withCredentials: false,
+                withCredentials: false
             })
             .then((res) => {
                 console.log(res);
@@ -127,4 +127,9 @@ export const submitMatch = async (
     }
 
     return false;
+};
+
+export const MatchHistoryService = {
+    useMatchHistory,
+    submitMatch
 };

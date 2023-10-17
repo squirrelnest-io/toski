@@ -1,6 +1,10 @@
+import { CreatableSelect, SingleValue } from "chakra-react-select";
 import React, { useCallback, useMemo, useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { FiUserPlus, FiX } from "react-icons/fi";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router";
 
 import {
     Button,
@@ -15,16 +19,13 @@ import {
     Textarea,
     RadioGroup,
     Stack,
-    Radio,
-    Checkbox
+    Radio
 } from "@chakra-ui/react";
-import { submitMatch } from "../../services/matchHistoryService";
-import { CreatableSelect, SingleValue } from "chakra-react-select";
-import { useSelector } from "react-redux";
-import { getPlayers } from "../../redux/statsSelectors";
+import { TriangleDownIcon, TriangleUpIcon } from "@chakra-ui/icons";
+
+import { MatchHistoryService } from "../../services/MatchHistoryService";
+import { getPlayers } from "../../redux/stats/statsSelectors";
 import { commanderList } from "../../services/commanderList";
-import { FiUserPlus, FiX } from "react-icons/fi";
-import { useNavigate } from "react-router";
 
 const placeholderImage = "https://static.thenounproject.com/png/5425-200.png";
 
@@ -179,9 +180,17 @@ const MatchSubmissionPlayerCard = React.memo(function MatchSubmissionPlayerCard(
                     return <option value={option.name}>{option.name}</option>;
                 })}
             </Select>
-            <Checkbox isChecked={hasPartner} onChange={onHasPartnerChanged} marginTop={"8px"} alignSelf={"flex-end"}>
-                {"Has Partner"}
-            </Checkbox>
+            <Button
+                size={"sm"}
+                variant={"ghost"}
+                leftIcon={hasPartner ? <TriangleUpIcon /> : <TriangleDownIcon />}
+                marginTop={"8px"}
+                alignSelf={"flex-end"}
+                onClick={onHasPartnerChanged}
+                aria-label={hasPartner ? "Toggle Partner Off" : "Toggle Partner On"}
+            >
+                {"Toggle Partner"}
+            </Button>
             {hasPartner ? (
                 <>
                     <Text marginTop={"8px"}>Partner/Background Commander:</Text>
@@ -289,7 +298,15 @@ export const MatchSubmission = React.memo(function MatchSubmission() {
             rank: player4Rank
         };
 
-        const result = await submitMatch(date, player1, player2, player3, player4, turnCount, notes);
+        const result = await MatchHistoryService.submitMatch(
+            date,
+            player1,
+            player2,
+            player3,
+            player4,
+            turnCount,
+            notes
+        );
 
         if (result) {
             alert("Match submitted successfully!");
@@ -355,7 +372,7 @@ export const MatchSubmission = React.memo(function MatchSubmission() {
                         setPlayerValue={setPlayer2Name}
                         setCommanderValue={setPlayer2Commander}
                         setPlayerRank={setPlayer2Rank}
-                        showCloseIcon={playerCount == 2}
+                        showCloseIcon={playerCount === 2}
                         onClose={onClose}
                     />
                 ) : null}
@@ -366,7 +383,7 @@ export const MatchSubmission = React.memo(function MatchSubmission() {
                         setPlayerValue={setPlayer3Name}
                         setCommanderValue={setPlayer3Commander}
                         setPlayerRank={setPlayer3Rank}
-                        showCloseIcon={playerCount == 3}
+                        showCloseIcon={playerCount === 3}
                         onClose={onClose}
                     />
                 ) : null}
@@ -377,7 +394,7 @@ export const MatchSubmission = React.memo(function MatchSubmission() {
                         setPlayerValue={setPlayer4Name}
                         setCommanderValue={setPlayer4Commander}
                         setPlayerRank={setPlayer4Rank}
-                        showCloseIcon={playerCount == 4}
+                        showCloseIcon={playerCount === 4}
                         onClose={onClose}
                     />
                 ) : null}
