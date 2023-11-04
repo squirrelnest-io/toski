@@ -1,12 +1,34 @@
+import { NUMBER_OF_PLAYERS_FOR_VALID_MATCH } from "../components/constants";
 import { commanderList } from "../services/commanderList";
 import { Commander } from "../types/domain/Commander";
 import { Match } from "../types/domain/Match";
 import { Player } from "../types/domain/Player";
 
 /**
+ * Given a collection of Matches, filter out games that don't have the desired number of players.
+ * @param matches
+ * @param playerCount The number of players in the match that matches will be filtered by.
+ * @returns
+ */
+export function filterMatchesByPlayerCount(matches: Match[], playerCount: number): Match[] {
+    const result = [];
+
+    for (const match of matches) {
+        if (match.players.length !== playerCount) {
+            continue;
+        }
+
+        result.push(match);
+    }
+
+    return result;
+}
+
+/**
  * Given a collection of Matches, filters them to matches after a certain date.
  * Optionally, provide an end date as well.
- * @param matches
+ * No other checks than provided dates. Does not consider the validness of a game, for instance.
+ * @param matches Matches to consider
  * @param startDate
  * @param endDate
  * @returns
@@ -30,7 +52,9 @@ export function filterMatchesByDate(matches: Match[], startDate?: Date, endDate?
 }
 
 /**
- * Given a collection of matches, create a dictionary of commanders with optional filters
+ * Given a collection of matches, create a dictionary of players with optional filters
+ * where the stats of those players are computed only using valid matches
+ * (as determined by the required number of players in the match).
  * @param matches The collection of matches to build the dictionary from
  * @param playerId An optional player name to filter the commanders by (will only return commanders the player has played)
  * @returns A dictionary of commanders keyed by commanderId
@@ -38,7 +62,7 @@ export function filterMatchesByDate(matches: Match[], startDate?: Date, endDate?
 export function matchesToCommanderHelper(
     matches: Match[],
     playerNameFilter?: string,
-    startDate?: Date,
+    startDate?: Date
 ): { [id: string]: Commander } {
     const filteredMatches = filterMatchesByDate(matches, startDate);
 
@@ -64,7 +88,7 @@ export function matchesToCommanderHelper(
                 if (commander === undefined) {
                     // log the invalid commander
                     console.log(
-                        `Invalid commander found in currentMatch <${currentMatch.id}> : ${currentCommanderName}`,
+                        `Invalid commander found in currentMatch <${currentMatch.id}> : ${currentCommanderName}`
                     );
                     continue;
                 }
@@ -76,15 +100,22 @@ export function matchesToCommanderHelper(
                     playedCommanderDictionary[commander.id] = {
                         id: commander.id,
                         name: currentCommanderName,
-                        colorIdentity: commander.color_identity,
+                        colorIdentity: commander.colorIdentity,
                         matches: [currentMatch.id],
-                        wins: player.rank === "1" ? 1 : 0,
+                        validMatchesCount: currentMatch.players.length === NUMBER_OF_PLAYERS_FOR_VALID_MATCH ? 1 : 0,
+                        wins:
+                            player.rank === "1" && currentMatch.players.length === NUMBER_OF_PLAYERS_FOR_VALID_MATCH
+                                ? 1
+                                : 0
                     };
                 } else {
                     // since this commander exists, update the currentMatch count
                     playedCommanderDictionary[potentialCommanderObj.id].matches.push(currentMatch.id);
-                    if (player.rank === "1") {
-                        playedCommanderDictionary[potentialCommanderObj.id].wins++;
+                    if (currentMatch.players.length === NUMBER_OF_PLAYERS_FOR_VALID_MATCH) {
+                        if (player.rank === "1") {
+                            playedCommanderDictionary[potentialCommanderObj.id].wins++;
+                        }
+                        playedCommanderDictionary[potentialCommanderObj.id].validMatchesCount++;
                     }
                 }
             }
@@ -95,14 +126,14 @@ export function matchesToCommanderHelper(
 
 /**
  * Given a collection of matches, create a dictionary of players with optional filters
- * @param matches The collection of matches to build the dictionary from
+ * @param matches The collection of matches to build the dictionary from. For stats it filters out matches with incorrect player counts
  * @param commanderName An optional commander name to filter the users by (the user must have played this commander)
  * @returns A dictionary of player keyed by playerId
  */
 export function matchesToPlayersHelper(
     matches: Match[],
     commanderNameFilter?: string,
-    startDate?: Date,
+    startDate?: Date
 ): { [id: string]: Player } {
     const filteredMatches = filterMatchesByDate(matches, startDate);
 
@@ -131,7 +162,7 @@ export function matchesToPlayersHelper(
                     // compute the players color profile
                     for (const commanderName of player.commanders) {
                         const potentialCommander = commanderList[commanderName];
-                        const colors = potentialCommander ? potentialCommander.color_identity : [];
+                        const colors = potentialCommander ? potentialCommander.colorIdentity : [];
                         for (const color of colors) {
                             // add or increment this in our colorProfile dictionary
                             colorProfile[color] = colorProfile[color] === undefined ? 1 : colorProfile[color] + 1;
@@ -142,20 +173,27 @@ export function matchesToPlayersHelper(
                     playerDictionary[player.name] = {
                         name: player.name,
                         matches: [currentMatch],
-                        wins: player.rank === "1" ? 1 : 0,
-                        colorProfile: colorProfile,
+                        validMatchesCount: currentMatch.players.length === NUMBER_OF_PLAYERS_FOR_VALID_MATCH ? 1 : 0,
+                        wins:
+                            player.rank === "1" && currentMatch.players.length === NUMBER_OF_PLAYERS_FOR_VALID_MATCH
+                                ? 1
+                                : 0,
+                        colorProfile: colorProfile
                     };
                 } else {
                     // since this player exists, update the currentMatch count
                     playerDictionary[player.name].matches.push(currentMatch);
-                    if (player.rank === "1") {
-                        playerDictionary[player.name].wins++;
+                    if (currentMatch.players.length === NUMBER_OF_PLAYERS_FOR_VALID_MATCH) {
+                        if (player.rank === "1") {
+                            playerDictionary[player.name].wins++;
+                        }
+                        playerDictionary[player.name].validMatchesCount++;
                     }
 
                     // compute the players color profile
                     for (const commanderName of player.commanders) {
                         const potentialCommander = commanderList[commanderName];
-                        const colors = potentialCommander ? potentialCommander.color_identity : [];
+                        const colors = potentialCommander ? potentialCommander.colorIdentity : [];
                         for (const color of colors) {
                             // add or increment this in our colorProfile dictionary
                             playerDictionary[player.name].colorProfile[color] =

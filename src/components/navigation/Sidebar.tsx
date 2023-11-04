@@ -1,10 +1,9 @@
 import { IconType } from "react-icons";
-import { FiBarChart, FiCalendar, FiHome, FiRss, FiShield, FiTrendingUp, FiUsers } from "react-icons/fi";
+import { FiBarChart, FiCalendar, FiHome, FiShield, FiTrendingUp, FiUsers } from "react-icons/fi";
 
 import { Box, useColorModeValue, Flex, CloseButton, VStack, BoxProps, Text } from "@chakra-ui/react";
 
 import { SidebarNavItem } from "./SidebarNavItem";
-import { FF_IS_NEWS_ENABLED } from "../../services/featureFlagService";
 
 interface LinkItemProps {
     name: string;
@@ -27,10 +26,6 @@ interface SidebarProps extends BoxProps {
 export const Sidebar = ({ onClose, ...rest }: SidebarProps) => {
     const linkItems = [...LinkItems];
 
-    if (FF_IS_NEWS_ENABLED) {
-        linkItems.splice(1, 0, { name: "Articles", icon: FiRss, route: "/articles" });
-    }
-
     return (
         <Box
             transition="3s ease"
@@ -42,7 +37,7 @@ export const Sidebar = ({ onClose, ...rest }: SidebarProps) => {
             {...rest}
             boxShadow={"0px 12px 18px 2px rgba(0,0,0,0.3)"}
         >
-            <Flex h="20" align="center" paddingRight={"8px"} paddingLeft={"20px"} backgroundColor={"white"}>
+            <Flex h="56px" align="center" paddingRight={"8px"} paddingLeft={"20px"} backgroundColor={"white"}>
                 <CloseButton display={{ base: "flex", md: "none" }} onClick={onClose} />
                 <Text
                     fontSize="20"

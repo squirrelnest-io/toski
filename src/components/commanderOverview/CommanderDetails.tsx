@@ -2,10 +2,9 @@ import { TooltipItem } from "chart.js";
 import React, { useCallback, useState } from "react";
 import { useSelector } from "react-redux";
 import { useLoaderData, useNavigate } from "react-router-dom";
-import { Flex, Heading, Image, Input, Tab, TabList, TabPanel, TabPanels, Tabs, Text, Thead } from "@chakra-ui/react";
-
+import { Flex, Heading, Image, Input, Link, Tab, TabList, TabPanel, TabPanels, Tabs, Text } from "@chakra-ui/react";
 import { AppState } from "../../redux/rootReducer";
-import { getCommander, getMatchesByCommanderName, getPlayersByCommanderName } from "../../redux/stats/statsSelectors";
+import { StatsSelectors } from "../../redux/stats/statsSelectors";
 import { Loading } from "../Loading";
 import { commanderList } from "../../services/commanderList";
 import { SortableTable } from "../dataVisualizations/SortableTable";
@@ -14,11 +13,14 @@ import { Match } from "../../types/domain/Match";
 import { MatchPlayer } from "../../types/domain/MatchPlayer";
 import { LineGraph } from "../dataVisualizations/LineGraph";
 import { Player } from "../../types/domain/Player";
-import { COMMANDER_MINIMUM_GAMES_REQUIRED } from "../constants";
+import { COMMANDER_MINIMUM_GAMES_REQUIRED, NUMBER_OF_PLAYERS_FOR_VALID_MATCH } from "../constants";
 import { DatePicker } from "../common/DatePicker";
 import { MatchPlacementBarChart } from "./MatchPlacementBarChart";
 import { primaryColor } from "../../themes/acorn";
 import { topPlayersColumns } from "../dataVisualizations/columnHelpers/topPlayersColumnHelper";
+import { filterMatchesByPlayerCount } from "../../logic/dictionaryUtils";
+import { getWinRatePercentage } from "../../logic/utils";
+import { ExternalLinkIcon } from "@chakra-ui/icons";
 
 export async function loader(data: { params: any }) {
     return data.params.commanderId;
@@ -27,7 +29,7 @@ export async function loader(data: { params: any }) {
 export const CommanderDetails = React.memo(function CommanderDetails() {
     const navigate = useNavigate();
     const commanderId = useLoaderData() as string;
-    const commander = useSelector((state: AppState) => getCommander(state, commanderId));
+    const commander = useSelector((state: AppState) => StatsSelectors.getCommander(state, commanderId));
 
     const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
     const onDatePickerChange = useCallback(
@@ -45,19 +47,29 @@ export const CommanderDetails = React.memo(function CommanderDetails() {
         [setSearchInput]
     );
 
+    // Get all matches to display in Match History of the Commander Overview
     const matches = useSelector((state: AppState) =>
-        getMatchesByCommanderName(state, commander ? commander.name : "", dateFilter)
+        StatsSelectors.getMatchesByCommanderName(state, commander ? commander.name : "", dateFilter)
+    );
+
+    // Get matches filtered by player count to use in statistical calculations
+    // These matches are considered "valid" because they all have the same number of players
+    const validMatches = filterMatchesByPlayerCount(
+        useSelector((state: AppState) =>
+            StatsSelectors.getMatchesByCommanderName(state, commander ? commander.name : "", dateFilter)
+        ),
+        NUMBER_OF_PLAYERS_FOR_VALID_MATCH
     );
     const commanderPlayers: Player[] = useSelector((state: AppState) =>
-        getPlayersByCommanderName(state, commander ? commander.name : "", dateFilter)
+        StatsSelectors.getPlayersByCommanderName(state, commander ? commander.name : "", dateFilter)
     );
-    commanderPlayers.sort((a: Player, b: Player) => b.matches.length - a.matches.length);
+    commanderPlayers.sort((a: Player, b: Player) => b.validMatchesCount - a.validMatchesCount);
 
     if (commander === undefined) {
         return <Loading text="" />;
     }
 
-    let matchesArray: Match[] = matches;
+    let matchesArray: Match[] = matches.sort((a, b) => b.date.getTime() - a.date.getTime());
     if (searchInput.length > 0 && matches) {
         matchesArray = matches.filter((match: Match) => {
             for (let player of match.players) {
@@ -76,7 +88,7 @@ export const CommanderDetails = React.memo(function CommanderDetails() {
 
     let numberOfWins = 0;
 
-    const winratePerMatch = matches.map((match: Match, index: number) => {
+    const winratePerMatch = validMatches.map((match: Match, index: number) => {
         const winningPlayer = match.players.find((player: MatchPlayer) => player.rank === "1");
 
         let currentWinRate = 0;
@@ -98,7 +110,7 @@ export const CommanderDetails = React.memo(function CommanderDetails() {
     });
 
     const tooltipTitleCallback = (item: TooltipItem<"line">[]) => {
-        return `Match Id: ${matches[item[0].dataIndex].id}`;
+        return `Match ID: ${validMatches[item[0].dataIndex].id}`;
     };
     const tooltipLabelCallback = (item: TooltipItem<"line">) => {
         return `Winrate: ${item.formattedValue}%`;
@@ -122,6 +134,7 @@ export const CommanderDetails = React.memo(function CommanderDetails() {
                         src={commanderList[commander.name].image}
                         boxShadow={"0px 12px 18px 2px rgba(0,0,0,0.3)"}
                         borderRadius={"4%"}
+                        zIndex={1}
                     />
                 ) : null}
                 <Flex
@@ -131,7 +144,6 @@ export const CommanderDetails = React.memo(function CommanderDetails() {
                     paddingLeft={{ base: "16px", md: 0 }}
                     paddingBottom={"16px"}
                     marginLeft={{ base: 0, md: "-8px" }}
-                    zIndex={-1}
                 >
                     <Heading
                         size={"sm"}
@@ -155,16 +167,7 @@ export const CommanderDetails = React.memo(function CommanderDetails() {
                         borderLeftWidth={1}
                         borderRightWidth={1}
                         borderBottomWidth={1}
-                    >{`Total Games: ${commander.matches.length}`}</Text>
-                    <Text
-                        paddingLeft={"16px"}
-                        paddingRight={"16px"}
-                        paddingTop={"8px"}
-                        paddingBottom={"8px"}
-                        borderLeftWidth={1}
-                        borderRightWidth={1}
-                        borderBottomWidth={1}
-                    >{`Wins: ${commander.wins}`}</Text>
+                    >{`Total Games: ${commander.validMatchesCount}`}</Text>
                     <Text
                         paddingLeft={"16px"}
                         paddingRight={"16px"}
@@ -175,10 +178,12 @@ export const CommanderDetails = React.memo(function CommanderDetails() {
                         borderBottomWidth={1}
                     >
                         {`Winrate: ${
-                            commander.matches.length > 0
-                                ? Math.round((commander.wins / commander.matches.length) * 100)
-                                : 0
-                        }%`}
+                            commander.validMatchesCount > 0
+                                ? `${getWinRatePercentage(commander.wins, commander.validMatchesCount)}% (${
+                                      commander.wins
+                                  } win${commander.wins > 1 ? "s" : ""})`
+                                : "N/A" // Displays N/A if the commander has no valid matches
+                        }`}
                     </Text>
                     <Text
                         paddingLeft={"16px"}
@@ -189,8 +194,23 @@ export const CommanderDetails = React.memo(function CommanderDetails() {
                         borderRightWidth={1}
                         borderBottomWidth={1}
                     >{`Qualified: ${
-                        commander.matches.length >= COMMANDER_MINIMUM_GAMES_REQUIRED ? "Yes" : "No"
+                        commander.validMatchesCount >= COMMANDER_MINIMUM_GAMES_REQUIRED ? "Yes" : "No"
                     }`}</Text>
+                    {commanderList[commander.name] ? (
+                        <Link
+                            paddingLeft={"16px"}
+                            paddingRight={"16px"}
+                            paddingTop={"8px"}
+                            paddingBottom={"8px"}
+                            borderLeftWidth={1}
+                            borderRightWidth={1}
+                            borderBottomWidth={1}
+                            href={commanderList[commander.name].scryfallUri}
+                            isExternal
+                        >
+                            View on Scryfall <ExternalLinkIcon mx="2px" marginBottom={"5px"} />
+                        </Link>
+                    ) : null}
                 </Flex>
             </Flex>
             <Flex direction={"column"}>
@@ -235,7 +255,7 @@ export const CommanderDetails = React.memo(function CommanderDetails() {
                     </TabPanel>
                     <TabPanel>
                         <Flex flexDirection={"column"} justifyContent={"center"} alignItems={"center"} padding="8px">
-                            {matches.length >= COMMANDER_MINIMUM_GAMES_REQUIRED ? (
+                            {validMatches.length >= COMMANDER_MINIMUM_GAMES_REQUIRED ? (
                                 <LineGraph
                                     dataLabel={"Winrate"}
                                     data={winratePerMatch}

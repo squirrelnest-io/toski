@@ -4,12 +4,14 @@ import { useNavigate } from "react-router-dom";
 
 import { SortableTable } from "../dataVisualizations/SortableTable";
 import { AppState } from "../../redux/rootReducer";
-import { getMatchesByPlayerName } from "../../redux/stats/statsSelectors";
+import { StatsSelectors } from "../../redux/stats/statsSelectors";
 import {
     CommanderMatchupItem,
     commanderMatchupsColumns
 } from "../dataVisualizations/columnHelpers/commanderMatchupsColumnHelper";
 import { commanderList } from "../../services/commanderList";
+import { filterMatchesByPlayerCount } from "../../logic/dictionaryUtils";
+import { NUMBER_OF_PLAYERS_FOR_VALID_MATCH } from "../constants";
 
 export const CommanderMatchupsTable = React.memo(function CommanderMatchupsTable({
     playerId,
@@ -20,8 +22,11 @@ export const CommanderMatchupsTable = React.memo(function CommanderMatchupsTable
 }) {
     const navigate = useNavigate();
 
-    // get all the matches of the player has participated in
-    const matches = useSelector((state: AppState) => getMatchesByPlayerName(state, playerId, dateFilter));
+    // get all the valid matches the player has participated in
+    const matches = filterMatchesByPlayerCount(
+        useSelector((state: AppState) => StatsSelectors.getMatchesByPlayerName(state, playerId, dateFilter)),
+        NUMBER_OF_PLAYERS_FOR_VALID_MATCH
+    );
     const commanderMatchups: { [commanderId: string]: CommanderMatchupItem } = {};
 
     for (const match of matches) {

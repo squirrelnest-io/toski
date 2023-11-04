@@ -3,15 +3,25 @@ import { Player } from "../types/domain/Player";
 import { getAverageWinTurn, getWinRatePercentage } from "./utils";
 
 describe("getWinRatePercentage", function () {
-    it("given win number and total games, provide win rate (as whole number)", function () {
+    it("given win number and total number of matches, provide win rate", function () {
         expect(getWinRatePercentage(5, 10)).toEqual(50);
         expect(getWinRatePercentage(1, 3)).toEqual(33);
         expect(getWinRatePercentage(0, 10)).toEqual(0);
         expect(getWinRatePercentage(10, 10)).toEqual(100);
     });
 
-    it("given no games, handles this case", function () {
-        expect(getWinRatePercentage(0, 0)).toEqual(0);
+    it("should return -1 if number of matches or wins is somehow invalid", function () {
+        expect(getWinRatePercentage(3, 0)).toEqual(-1); // Division by zero throws the "error" -1
+        expect(getWinRatePercentage(-1, 4)).toEqual(-1); // Negative wins throws the "error" -1
+        expect(getWinRatePercentage(3, -9)).toEqual(-1); // Negative match count throws the "error" -1
+    });
+
+    it("should give rounded numbers given some decimal places as an optional parameter", function () {
+        expect(getWinRatePercentage(1, 3)).toEqual(33); // Default behaviour is zero decimal places when no parameter is given
+        expect(getWinRatePercentage(1, 3, 2)).toEqual(33.33); // Two decimal places
+        expect(getWinRatePercentage(1, 3, -1)).toEqual(1 / 3); // Full floating number
+        expect(getWinRatePercentage(1, 3, -75)).toEqual(1 / 3); // Also full floating number
+        expect(getWinRatePercentage(4, 8, 0.2)).toEqual(-1); // Non-integer number of decimal places throws the "error" -1
     });
 });
 
@@ -22,23 +32,24 @@ describe("getAverageWinTurn", () => {
     beforeEach(() => {
         // Reset data to test against
         matches = [
-            { id: "1", date: new Date(), players: [], numberOfTurns: "7", winner: "John" },
-            { id: "2", date: new Date(), players: [], numberOfTurns: "8", winner: "John" },
-            { id: "3", date: new Date(), players: [], numberOfTurns: "11", winner: "John" },
-            { id: "4", date: new Date(), players: [], numberOfTurns: "0", winner: "John" }, // Invalid: turns
-            { id: "5", date: new Date(), players: [], numberOfTurns: "0", winner: "John" }, // Invalid: turns
-            { id: "6", date: new Date(), players: [], numberOfTurns: "4", winner: "Sara" }, // Invalid: lost
-            { id: "7", date: new Date(), players: [], numberOfTurns: "10", winner: "John" },
-            { id: "8", date: new Date(), players: [], numberOfTurns: "3", winner: "Jane" }, // Invalid: lost
-            { id: "9", date: new Date(), players: [], numberOfTurns: "9", winner: "Bret" }, // Invalid: lost
-            { id: "10", date: new Date(), players: [], numberOfTurns: "9", winner: "John" },
+            { id: "1", date: new Date(), players: [], numberOfTurns: 7, winner: "John" },
+            { id: "2", date: new Date(), players: [], numberOfTurns: 8, winner: "John" },
+            { id: "3", date: new Date(), players: [], numberOfTurns: 11, winner: "John" },
+            { id: "4", date: new Date(), players: [], numberOfTurns: 0, winner: "John" }, // Invalid: turns
+            { id: "5", date: new Date(), players: [], numberOfTurns: 0, winner: "John" }, // Invalid: turns
+            { id: "6", date: new Date(), players: [], numberOfTurns: 4, winner: "Sara" }, // Invalid: lost
+            { id: "7", date: new Date(), players: [], numberOfTurns: 10, winner: "John" },
+            { id: "8", date: new Date(), players: [], numberOfTurns: 3, winner: "Jane" }, // Invalid: lost
+            { id: "9", date: new Date(), players: [], numberOfTurns: 9, winner: "Bret" }, // Invalid: lost
+            { id: "10", date: new Date(), players: [], numberOfTurns: 9, winner: "John" }
         ];
 
         player = {
             name: "John",
             matches: matches,
+            validMatchesCount: 10,
             wins: 7,
-            colorProfile: {},
+            colorProfile: {}
         };
     });
 
@@ -47,7 +58,7 @@ describe("getAverageWinTurn", () => {
     });
 
     it("should handle rounding average win turn correctly", () => {
-        player.matches[0].numberOfTurns = "99.4";
+        player.matches[0].numberOfTurns = 99.4;
         expect(getAverageWinTurn(player)).toBe("27.5"); // (99.4+8+11+10+9)/5 = 27.48
     });
 

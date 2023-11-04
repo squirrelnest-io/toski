@@ -1,35 +1,49 @@
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 
-import { useEffect } from "react";
-import { getAccessToken, getTokenType } from "../redux/auth/authSelectors";
+import { useCallback } from "react";
 import { UserAction } from "../redux/user/userActions";
 import { UserSelectors } from "../redux/user/userSelectors";
+import { useAuthInfo } from "../logic/hooks/authHooks";
 
-const useCurrentUserInfo = () => {
+export const getDiscordLoginEndpoint = () => {
+    const redirectUri = encodeURIComponent("http://" + window.location.host + "/toski");
+    return `https://discord.com/api/oauth2/authorize?client_id=1163345338376138773&redirect_uri=${redirectUri}&response_type=token&scope=identify`;
+};
+
+export const getDiscordAvatarImage = (userId: string, userAvatar: string) => {
+    return `https://cdn.discordapp.com/avatars/${userId}/${userAvatar}.png`;
+};
+
+const useGetCurrentUserInfo = () => {
     const dispatch = useDispatch();
+    const { accessToken, tokenType } = useAuthInfo();
 
-    const authTokenType = useSelector(getTokenType);
-    const accessToken = useSelector(getAccessToken);
     const isUserSignedIn = useSelector(UserSelectors.getUsername) !== undefined;
 
     const endpoint = "https://discord.com/api/users/@me";
 
-    useEffect(() => {
+    return useCallback(() => {
         // if the user is signed in but we don't have the discord information for that user, request that information
         if (accessToken !== undefined && isUserSignedIn === false) {
             axios
                 .get<string>(endpoint, {
-                    headers: { authorization: `${authTokenType} ${accessToken}` }
+                    headers: { authorization: `${tokenType} ${accessToken}` }
                 })
                 .then((res) => {
                     const data: any = res.data as any;
-                    dispatch(UserAction.SetUserComplete({ username: data.username, id: data.id, avatar: data.avatar }));
+                    dispatch(
+                        UserAction.SetUserComplete({
+                            username: data.username,
+                            id: data.id.toString(),
+                            avatar: data.avatar
+                        })
+                    );
                 });
         }
-    }, [accessToken, authTokenType, dispatch, isUserSignedIn]);
+    }, [accessToken, tokenType, dispatch, isUserSignedIn]);
 };
 
 export const DiscordService = {
-    useCurrentUserInfo
+    useGetCurrentUserInfo
 };
