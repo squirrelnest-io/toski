@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Flex, Heading, Text } from "@chakra-ui/react";
+
+import { Flex, Heading, Text, Image, Button, Tooltip } from "@chakra-ui/react";
+
 import { StatsSelectors } from "../../../redux/stats/statsSelectors";
 import { AppState } from "../../../redux/rootReducer";
 import { MTG_COLORS } from "../../constants";
@@ -11,8 +13,13 @@ import { commanderList } from "../../../services/commanderList";
 import { primaryColor } from "../../../themes/acorn";
 import { ProfileSelectors } from "../../../redux/profiles/profilesSelectors";
 import { ProfileService } from "../../../services/ProfileService";
+import { MoxfieldProfile } from "../../../types/domain/MoxfieldProfile";
+import { MoxfieldService } from "../../../services/MoxfieldService";
 
 export const PlayerDetailsInfoCard = React.memo(function PlayerDetailsInfoCard({ playerId }: { playerId: string }) {
+    const hydrateMoxfieldProfile = MoxfieldService.useHydrateMoxfieldProfile();
+    const [isMoxfieldButtonHovered, setIsMoxfieldButtonHovered] = useState<boolean>();
+
     const player = useSelector((state: AppState) => StatsSelectors.getPlayer(state, playerId));
     const favoriteCommander = useSelector((state: AppState) =>
         StatsSelectors.getFavoriteCommanderForPlayer(state, playerId)
@@ -22,6 +29,36 @@ export const PlayerDetailsInfoCard = React.memo(function PlayerDetailsInfoCard({
     const potentialProfileId = player ? getProfileId(player.name) : undefined;
     const profileId = potentialProfileId ?? "";
     const profile = useSelector((state: AppState) => ProfileSelectors.getProfile(state, profileId));
+
+    // TODO: let's move this to a selector
+    const moxfieldProfile: MoxfieldProfile | undefined = useSelector((state: AppState) => {
+        if (state.profiles.moxfieldProfiles !== undefined && profile?.moxfieldId !== undefined) {
+            return state.profiles.moxfieldProfiles[profile.moxfieldId];
+        }
+        return undefined;
+    });
+
+    useEffect(() => {
+        // This useEffect ensures we don't call Chatterfang every time the page renders
+        if (profile?.moxfieldId !== undefined && !moxfieldProfile) {
+            hydrateMoxfieldProfile(profile.moxfieldId);
+        }
+    }, [hydrateMoxfieldProfile, moxfieldProfile, profile]);
+
+    const navigateToMoxfieldAccount = useCallback(() => {
+        if (moxfieldProfile) {
+            window.location.href = `https://www.moxfield.com/users/${moxfieldProfile.userName}`;
+        }
+    }, [moxfieldProfile]);
+
+    const moxfieldButtonOnHoverStart = useCallback(() => {
+        console.log("here");
+        setIsMoxfieldButtonHovered(true);
+    }, [setIsMoxfieldButtonHovered]);
+
+    const moxfieldButtonOnHoverEnd = useCallback(() => {
+        setIsMoxfieldButtonHovered(false);
+    }, [setIsMoxfieldButtonHovered]);
 
     if (player === undefined) {
         return null;
@@ -43,6 +80,11 @@ export const PlayerDetailsInfoCard = React.memo(function PlayerDetailsInfoCard({
         colorsPlayedArray.push(player.colorProfile[colorObj.id]);
     }
 
+    const moxfieldImage =
+        moxfieldProfile && isMoxfieldButtonHovered && moxfieldProfile.imageUrl
+            ? moxfieldProfile.imageUrl
+            : "https://avatars.githubusercontent.com/u/65498797?s=200&v=4";
+
     return (
         <Flex direction="row" justifyContent="center" alignItems={"center"} flexWrap={"wrap"} marginBottom={"16px"}>
             {favoriteCommander ? (
@@ -59,7 +101,6 @@ export const PlayerDetailsInfoCard = React.memo(function PlayerDetailsInfoCard({
                 paddingLeft={{ base: "16px", md: 0 }}
                 paddingBottom={"16px"}
                 marginLeft={{ base: 0, md: "-8px" }}
-                zIndex={-1}
             >
                 <Heading
                     size={"sm"}
@@ -110,6 +151,24 @@ export const PlayerDetailsInfoCard = React.memo(function PlayerDetailsInfoCard({
                     borderRightWidth={1}
                     borderBottomWidth={1}
                 >{`Avg. win turn: ${getAverageWinTurn(player)}`}</Text>
+                <Flex flexDirection={"row"} justifyContent={"center"} zIndex={10} marginTop={"2px"}>
+                    {moxfieldProfile !== undefined ? (
+                        <Tooltip label={`Moxfield Account: ${moxfieldProfile.userName}`}>
+                            <Button
+                                style={{ padding: 0 }}
+                                onClick={navigateToMoxfieldAccount}
+                                variant={"ghost"}
+                                width={"32px"}
+                                height={"32px"}
+                                borderRadius={"16px"}
+                                onMouseEnter={moxfieldButtonOnHoverStart}
+                                onMouseLeave={moxfieldButtonOnHoverEnd}
+                            >
+                                <Image borderRadius={"16px"} width={"32px"} height={"32px"} src={moxfieldImage} />
+                            </Button>
+                        </Tooltip>
+                    ) : null}
+                </Flex>
             </Flex>
             <Flex maxWidth={175} maxHeight={175}>
                 <div style={{ flex: 1, display: "flex", width: "100%", height: "100%" }}>
