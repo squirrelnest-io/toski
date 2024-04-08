@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
-import { Flex, Heading, Text, Image, Button, Tooltip } from "@chakra-ui/react";
+import { Flex, Heading, Text, Image, Button, Tooltip, color } from "@chakra-ui/react";
 
 import { StatsSelectors } from "../../../redux/stats/statsSelectors";
 import { AppState } from "../../../redux/rootReducer";
@@ -75,9 +75,12 @@ export const PlayerDetailsInfoCard = React.memo(function PlayerDetailsInfoCard({
         : "";
     const favCommanderName = themeCommanderName ?? favoriteCommander?.name;
 
-    const colorsPlayedArray: number[] = [];
+    const colorsPlayedArray: { name: string; value: number }[] = [];
     for (const colorObj of MTG_COLORS) {
-        colorsPlayedArray.push(player.colorProfile[colorObj.id]);
+        colorsPlayedArray.push({
+            name: colorObj.name,
+            value: player.colorProfile.colors[colorObj.id]
+        });
     }
 
     const moxfieldImage =
@@ -170,15 +173,12 @@ export const PlayerDetailsInfoCard = React.memo(function PlayerDetailsInfoCard({
                     ) : null}
                 </Flex>
             </Flex>
-            <Flex maxWidth={175} maxHeight={175}>
-                <div style={{ flex: 1, display: "flex", width: "100%", height: "100%" }}>
-                    <PieGraph
-                        dataLabel={"Commanders played"}
-                        data={colorsPlayedArray}
-                        backgroundColors={MTG_COLORS.map((color) => color.rgb)}
-                    />
-                </div>
-            </Flex>
+            <PieGraph
+                maxDimension={175}
+                dataLabel={"Commanders played"}
+                data={colorsPlayedArray}
+                backgroundColors={MTG_COLORS.map((color) => color.rgb)}
+            />
         </Flex>
     );
 });
