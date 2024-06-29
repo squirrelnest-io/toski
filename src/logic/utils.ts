@@ -5,6 +5,7 @@ import {
     PLAYER_MINIMUM_GAMES_REQUIRED,
     PLAYER_MINIMUM_WINS_REQUIRED
 } from "../components/constants";
+import { Match } from "../types/domain/Match";
 import { Player } from "../types/domain/Player";
 
 /**

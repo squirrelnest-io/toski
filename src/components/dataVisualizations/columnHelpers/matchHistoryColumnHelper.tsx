@@ -1,7 +1,12 @@
-import { Flex, Image, Text } from "@chakra-ui/react";
+import { FiLoader } from "react-icons/fi";
+
+import { Flex, Image, Tag, TagLabel, TagRightIcon, Text } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
+
 import { Match } from "../../../types/domain/Match";
 import { commanderList } from "../../../services/commanderList";
+import { primaryColor } from "../../../themes/acorn";
+import { MatchTag, getMatchTags } from "../../../logic/matchTags";
 
 const columnHelper = createColumnHelper<Match>();
 
@@ -9,7 +14,7 @@ export const matchHistoryColumns: ColumnDef<Match, any>[] = [
     columnHelper.accessor((row) => row.id, {
         id: "id",
         cell: (info) => info.getValue(),
-        header: () => <span>Game Id</span>
+        header: () => <span>Id</span>
     }),
     columnHelper.accessor((row) => row.date, {
         id: "date",
@@ -36,7 +41,16 @@ export const matchHistoryColumns: ColumnDef<Match, any>[] = [
                     value.commanders[2] !== undefined ? `with companion ${value.commanders[2]}` : undefined;
                 return (
                     <Flex key={index} flexDirection={"column"}>
-                        <Text style={{wordWrap:"break-word", whiteSpace: "normal", paddingLeft: "16px", textIndent: "-16px"}}>{value.name + " playing " + commanderText}</Text>
+                        <Text
+                            style={{
+                                wordWrap: "break-word",
+                                whiteSpace: "normal",
+                                paddingLeft: "16px",
+                                textIndent: "-16px"
+                            }}
+                        >
+                            {value.name + " playing " + commanderText}
+                        </Text>
                         {companionText !== undefined ? <Text paddingLeft={2}>{companionText}</Text> : null}
                     </Flex>
                 );
@@ -62,7 +76,7 @@ export const matchHistoryColumns: ColumnDef<Match, any>[] = [
                 : "";
 
             return (
-                <Flex alignContent={"center"} justifyContent={"center"} flexDirection={"column"}>
+                <Flex alignItems={"flex-start"} justifyContent={"center"} flexDirection={"column"}>
                     <Image src={commanderImage} width={20} borderRadius={8} />
                     <span>{info.getValue()}</span>
                 </Flex>
