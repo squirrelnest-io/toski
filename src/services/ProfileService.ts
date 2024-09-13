@@ -9,21 +9,14 @@ import { Profile } from "../types/domain/Profile";
 import { profilesDataMapper } from "../types/service/ProfileService/dataMappers";
 import { ProfilesAction } from "../redux/profiles/profilesActions";
 import { MoxfieldService } from "./MoxfieldService";
-
-const profileMap: { [name: string]: string } = {
-    Doomgeek: "230904033915830272",
-    "Aetherium Slinky": "226715073031176193",
-    LumenAdi: "224315766042787840",
-    Wisecompany: "396390132988641281",
-    Leon_Von_Kaktuus: "563015313935826984",
-    Wrinklebuns: "187707404761169920",
-    WitchPHD: "71482669514366976"
-};
+import { DeckSource } from "../types/domain/DeckSource";
+import { ArchidektService } from "./ArchidektService";
 
 const useHydrateProfiles = () => {
     const dispatch = useDispatch();
 
     const hydrateMoxfieldDeck = MoxfieldService.useHydrateMoxfieldDeck();
+    const hydrateArchidektDeck = ArchidektService.useHydrateArchidektDeck();
 
     const endpoint = "https://chatterfang.onrender.com/profiles";
 
@@ -43,12 +36,26 @@ const useHydrateProfiles = () => {
                         // we need to hydrate each of these decks
                         for (let i = 0; i < profile.decks.length; i++) {
                             const deck = profile.decks[i];
-                            setTimeout(() => hydrateMoxfieldDeck(deck.moxfieldId), 250 * i);
+                            switch (deck.externalId.source) {
+                                case DeckSource.Moxfield:
+                                    setTimeout(() => hydrateMoxfieldDeck(deck.externalId.id), 250 * i);
+                                    break;
+                                case DeckSource.Archidekt:
+                                    setTimeout(() => hydrateArchidektDeck(deck.externalId.id), 250 * i);
+                                    break;
+                            }
                         }
                     }
                 }
             });
-    }, [dispatch, hydrateMoxfieldDeck]);
+    }, [hydrateArchidektDeck, dispatch, hydrateMoxfieldDeck]);
+};
+
+type UpdateProfilePayload = {
+    userId?: string;
+    favoriteCommander?: string;
+    moxfieldId?: string;
+    archidektId?: string;
 };
 
 const useUpdateProfile = () => {
@@ -60,15 +67,20 @@ const useUpdateProfile = () => {
     const endpoint = "https://chatterfang.onrender.com/profiles";
 
     return useCallback(
-        (commanderId: string, moxfieldId?: string) => {
-            const newProfile =
-                // specifically check against undefined because empty string moxfield id is valid (unlinking account)
-                moxfieldId !== undefined
-                    ? { userId: userId, favoriteCommander: commanderId, moxfieldId: moxfieldId }
-                    : {
-                          userId: userId,
-                          favoriteCommander: commanderId
-                      };
+        (commanderId: string, moxfieldId?: string, archidektId?: string) => {
+            const newProfile: UpdateProfilePayload = {
+                userId: userId,
+                favoriteCommander: commanderId
+            };
+
+            // specifically check against undefined because empty string moxfield id is valid (unlinking account)
+            if (moxfieldId !== undefined) {
+                newProfile.moxfieldId = moxfieldId;
+            }
+
+            if (archidektId !== undefined) {
+                newProfile.archidektId = archidektId;
+            }
 
             if (accessToken !== undefined && userId !== undefined) {
                 axios
@@ -85,6 +97,35 @@ const useUpdateProfile = () => {
     );
 };
 
+const useUpdateProfileLink = () => {
+    const hydrateProfiles = useHydrateProfiles();
+
+    const accessToken = useSelector(AuthSelectors.getAccessToken);
+
+    const endpoint = "https://chatterfang.onrender.com/linkprofile";
+
+    return useCallback(
+        (userId: string, toskiId: string) => {
+            const updatedProfile = {
+                userId: userId,
+                toskiId: toskiId
+            };
+
+            if (accessToken !== undefined && userId !== undefined) {
+                axios
+                    .post<string>(endpoint, updatedProfile, {
+                        headers: { "access-token": accessToken, "Content-Type": "application/json" }
+                    })
+                    .then((_res) => {
+                        // kick off a rehydrate of our profiles
+                        hydrateProfiles();
+                    });
+            }
+        },
+        [accessToken, hydrateProfiles]
+    );
+};
+
 const useAddDeckToProfile = () => {
     const hydrateProfiles = useHydrateProfiles();
 
@@ -94,8 +135,9 @@ const useAddDeckToProfile = () => {
     const endpoint = "https://chatterfang.onrender.com/addDeck";
 
     return useCallback(
-        (deckUrl: string, onSuccess?: () => void, onError?: () => void) => {
-            const body = { userId: userId, url: deckUrl, source: "moxfield" };
+        (deckUrl: string, source: DeckSource, onSuccess?: () => void, onError?: () => void) => {
+            const deckSource = source === DeckSource.Archidekt ? "archidekt" : "moxfield";
+            const body = { userId: userId, url: deckUrl, source: deckSource };
 
             if (accessToken !== undefined && userId !== undefined) {
                 axios
@@ -144,31 +186,10 @@ const useRemoveDeckFromProfile = () => {
     );
 };
 
-/**
- * Given a player name (not discord screen name), return the discord id
- */
-const useGetProfileId = (): ((playerName: string) => string | undefined) => {
-    return useCallback((playerName: string) => {
-        return profileMap[playerName] ?? "";
-    }, []);
-};
-
-/**
- * Given a discord id, return the player name (not discord screen name)
- * @param profileId The discord Id to search from
- * @returns The player name (not the discord screen name). Returns undefined if the mapping doesn't exist.
- */
-const useGetPlayerName = (): ((profileId: string) => string | undefined) => {
-    return useCallback((profileId: string) => {
-        return Object.keys(profileMap).find((name) => profileMap[name] === profileId);
-    }, []);
-};
-
 export const ProfileService = {
     useHydrateProfiles,
     useUpdateProfile,
-    useGetProfileId,
-    useGetPlayerName,
     useAddDeckToProfile,
-    useRemoveDeckFromProfile
+    useRemoveDeckFromProfile,
+    useUpdateProfileLink
 };

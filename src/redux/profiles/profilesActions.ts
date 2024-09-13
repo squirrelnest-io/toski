@@ -1,12 +1,15 @@
 import { createAction } from "@reduxjs/toolkit";
 import { Profile } from "../../types/domain/Profile";
 import { MoxfieldDeck } from "../../types/domain/MoxfieldDeck";
-import { MoxfieldProfile } from "../../types/domain/MoxfieldProfile";
+import { ExternalProfile } from "../../types/domain/ExternalProfile";
+import { ArchidektDeck } from "../../types/domain/ArchidektDeck";
 
 export enum ProfilesActionType {
     GetProfilesComplete = "ProfileActions/GetProfilesComplete",
     HydrateMoxfieldProfileComplete = "ProfileActions/HydrateMoxfieldProfileComplete",
-    HydrateMoxfieldDeckComplete = "ProfileActions/HydrateMoxfieldDeckComplete"
+    HydrateMoxfieldDeckComplete = "ProfileActions/HydrateMoxfieldDeckComplete",
+    HydrateArchidektProfileComplete = "ProfileActions/HydrateArchidektProfileComplete",
+    HydrateArchidektDeckComplete = "ProfileActions/HydrateArchidektDeckComplete"
 }
 
 export const ProfilesAction = {
@@ -16,7 +19,7 @@ export const ProfilesAction = {
     })),
     HydrateMoxfieldProfileComplete: createAction(
         ProfilesActionType.HydrateMoxfieldProfileComplete,
-        (data: MoxfieldProfile) => ({
+        (data: ExternalProfile) => ({
             type: ProfilesActionType.HydrateMoxfieldProfileComplete,
             payload: data
         })
@@ -24,5 +27,19 @@ export const ProfilesAction = {
     HydrateMoxfieldDeckComplete: createAction(ProfilesActionType.HydrateMoxfieldDeckComplete, (data: MoxfieldDeck) => ({
         type: ProfilesActionType.HydrateMoxfieldDeckComplete,
         payload: data
-    }))
+    })),
+    HydrateArchidektProfileComplete: createAction(
+        ProfilesActionType.HydrateArchidektProfileComplete,
+        (data: ExternalProfile) => ({
+            type: ProfilesActionType.HydrateArchidektProfileComplete,
+            payload: data
+        })
+    ),
+    HydrateArchidektDeckComplete: createAction(
+        ProfilesActionType.HydrateArchidektDeckComplete,
+        (data: ArchidektDeck) => ({
+            type: ProfilesActionType.HydrateMoxfieldDeckComplete,
+            payload: data
+        })
+    )
 };
