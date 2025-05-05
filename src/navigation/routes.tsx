@@ -15,6 +15,7 @@ import { loader as newsLoader, NewsDetail } from "../components/news/NewsDetail"
 import { MatchSubmission } from "../components/matchHistory/MatchSubmission";
 import { CommanderTrends } from "../components/commanderTrends/CommanderTrends";
 import { Admin } from "../components/admin/AdminScreen";
+import About from "../components/about/About";
 
 type route = {
     name: string;
@@ -98,6 +99,11 @@ export const routes: { [path: string]: route } = {
         name: "Admin Panel",
         path: "/admin",
         element: <Admin />
+    },
+    "/about": {
+        name: "About",
+        path: "/about",
+        element: <About />
     }
 };
 
