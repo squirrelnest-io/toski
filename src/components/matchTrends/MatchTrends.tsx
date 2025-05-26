@@ -1,7 +1,6 @@
 import React from "react";
 import { Flex } from "@chakra-ui/react";
 
-import { MatchTurnsLineChart } from "./MatchTurnsLineChart";
 import { StatsSelectors } from "../../redux/stats/statsSelectors";
 import { useSelector } from "react-redux";
 import { Loading } from "../Loading";
@@ -12,7 +11,6 @@ import { Player } from "../../types/domain/Player";
 import { MTG_COLORS } from "../constants";
 import { AppState } from "../../redux/rootReducer";
 import { MatchPositionWinsBarChart } from "./MatchPositionWinsBarChart";
-import { MatchTimeLineChart } from "./MatchTimeLineChart";
 import { MatchLengthLineCharts } from "./MatchLengthLineCharts";
 import { MatchFirstKoTurnLineChart } from "./MatchFirstKoTurnLineChart";
 
@@ -46,7 +44,7 @@ export const MatchTrends = React.memo(function MatchHistory() {
     }
 
     return (
-        <Flex direction="column" justify="center" align="center">
+        <Flex direction="column" justifyContent="center" alignItems="center" paddingBottom="32px">
             <MatchLengthBarChart matches={sortedMatches} />
             <MatchLengthLineCharts matches={sortedMatches} />
             <MatchFirstKoTurnLineChart matches={sortedMatches} />

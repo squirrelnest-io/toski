@@ -23,12 +23,24 @@ export type StatsState = Readonly<{
      * A map of all the players where the ID is the user name.
      */
     players: { [id: string]: Player } | undefined;
+
+    /**
+     * The start date for filtering matches (ISO date string)
+     */
+    startDate: string | undefined;
 }>;
+
+const getThreeMonthsAgoISO = (): string => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - 3);
+    return date.toISOString().split("T")[0]; // Format as YYYY-MM-DD
+};
 
 const initialState: StatsState = {
     matches: undefined,
     commanders: undefined,
-    players: undefined
+    players: undefined,
+    startDate: getThreeMonthsAgoISO()
 };
 
 export const statsReducer = createReducer(initialState, (builder) => {
@@ -37,5 +49,9 @@ export const statsReducer = createReducer(initialState, (builder) => {
         state.matches = matchesCollection;
         state.commanders = matchesToCommanderHelper(matchesCollection);
         state.players = matchesToPlayersHelper(matchesCollection);
+    });
+
+    builder.addCase(StatsAction.UpdateStartDate, (state, action) => {
+        state.startDate = action.payload;
     });
 });

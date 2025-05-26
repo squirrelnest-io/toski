@@ -14,17 +14,15 @@ import { filterMatchesByPlayerCount } from "../../logic/dictionaryUtils";
 import { NUMBER_OF_PLAYERS_FOR_VALID_MATCH } from "../constants";
 
 export const CommanderMatchupsTable = React.memo(function CommanderMatchupsTable({
-    commanderName,
-    dateFilter
+    commanderName
 }: {
     commanderName: string;
-    dateFilter?: Date;
 }) {
     const navigate = useNavigate();
 
     // get all the valid matches the commander has participated in
     const matches = filterMatchesByPlayerCount(
-        useSelector((state: AppState) => StatsSelectors.getMatchesByCommanderName(state, commanderName, dateFilter)),
+        useSelector((state: AppState) => StatsSelectors.getMatchesByCommanderName(state, commanderName)),
         NUMBER_OF_PLAYERS_FOR_VALID_MATCH
     );
     const commanderMatchups: { [commanderId: string]: CommanderMatchupItem } = {};

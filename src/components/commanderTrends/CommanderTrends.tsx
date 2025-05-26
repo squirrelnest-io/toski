@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
 
-import { Checkbox, Flex, Heading, color } from "@chakra-ui/react";
+import { Checkbox, Flex, Heading } from "@chakra-ui/react";
 
 import { StatsSelectors } from "../../redux/stats/statsSelectors";
 import { Loading } from "../Loading";

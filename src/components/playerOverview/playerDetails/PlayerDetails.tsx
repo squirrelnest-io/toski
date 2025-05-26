@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import { useLoaderData, useNavigate } from "react-router-dom";
 
@@ -23,7 +23,6 @@ import { SortableTable } from "../../dataVisualizations/SortableTable";
 import { Loading } from "../../Loading";
 import { MatchPlacementBarChart } from "../MatchPlacementBarChart";
 import { Match } from "../../../types/domain/Match";
-import { DatePicker } from "../../common/DatePicker";
 import { PlayerDetailsInfoCard } from "./PlayerDetailsInfoCard";
 import { CommanderHistoryTable } from "../CommanderHistoryTable";
 import { InsufficientData } from "../InsufficientData";
@@ -59,17 +58,11 @@ export const PlayerDetails = React.memo(function PlayerDetails() {
         setTabIndex(index);
     };
 
-    const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
-    const onDatePickerChange = useCallback(
-        (date: Date | undefined) => {
-            setDateFilter(date);
-        },
-        [setDateFilter]
-    );
+    const [dateFilter] = useState<Date | undefined>(undefined);
 
     // needs to come after we initialize the date filter
     const matches = useSelector((state: AppState) =>
-        StatsSelectors.getMatchesByPlayerName(state, playerId ? playerId : "", dateFilter)
+        StatsSelectors.getMatchesByPlayerName(state, playerId ? playerId : "")
     );
     matches.sort((a: Match, b: Match) => Number(b.id) - Number(a.id));
 
@@ -80,7 +73,6 @@ export const PlayerDetails = React.memo(function PlayerDetails() {
     return (
         <Flex direction="column" justify="center" align="center">
             <PlayerDetailsInfoCard playerId={playerId} />
-            <DatePicker onChange={onDatePickerChange} />
             <Select
                 marginTop={"16px"}
                 display={{ base: "inline", md: "none" }}
@@ -152,7 +144,7 @@ export const PlayerDetails = React.memo(function PlayerDetails() {
                         )}
                     </TabPanel>
                     <TabPanel>
-                        <CommanderHistoryTable playerId={playerId} dateFilter={dateFilter} />
+                        <CommanderHistoryTable playerId={playerId} />
                     </TabPanel>
                     <TabPanel>
                         <Flex
